@@ -5,7 +5,7 @@ layout: default
 Text can be **bold**, _italic_, or ~~strikethrough~~.
 
 
-[Link to another page](https://scholar.google.com/citations?user=im1lBhQAAAAJ&hl=en&oi=ao).
+[Google Scholar](https://scholar.google.com/citations?user=im1lBhQAAAAJ&hl=en&oi=ao).
 
 There should be whitespace between paragraphs.
 
@@ -13,7 +13,7 @@ There should be whitespace between paragraphs. We recommend including a README, 
 
 # Research interests
 
-My research mostly focuses on Affective computing. My PhD explored the detection and generation of empathic behaviour in computers and robotic agents. I have worked on emotion detection and emotional behavior in robots. I have worked on projects for the improvement of human-robot interaction, particularly social robots.
+My research mostly focuses on Affective computing. My PhD explored the detection and generation of empathic behaviour in computers and robotic agents. I have worked on emotion detection and emotional behavior in robots. In particular, the generation of emotion-based behavior to improve human-robot interaction in social robots.
 
 ## Header 2
 
