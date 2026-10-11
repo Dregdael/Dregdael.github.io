@@ -4,15 +4,16 @@ layout: default
 
 Text can be **bold**, _italic_, or ~~strikethrough~~.
 
-[Link to another page](./another-page.html).
+
+[Link to another page](https://scholar.google.com/citations?user=im1lBhQAAAAJ&hl=en&oi=ao).
 
 There should be whitespace between paragraphs.
 
 There should be whitespace between paragraphs. We recommend including a README, or a file with information about your project.
 
-# Header 1
+# Research interests
 
-This is a normal paragraph following a header. GitHub is a code hosting platform for version control and collaboration. It lets you and others work together on projects from anywhere.
+My research mostly focuses on Affective computing. My PhD explored the detection and generation of empathic behaviour in computers and robotic agents. I have worked on emotion detection and emotional behavior in robots. I have worked on projects for the improvement of human-robot interaction, particularly social robots.
 
 ## Header 2
 
