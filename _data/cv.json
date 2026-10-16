@@ -1,7 +1,7 @@
 {
   "basics": {
-    "name": "Your Sidebar Name",
-    "email": "none@example.org",
+    "name": "Edwin C. Montiel-Vázquez",
+    "email": "edwincmv@exatec.tec.mx",
     "phone": "",
     "website": "https://academicpages.github.io",
     "summary": "Currently employed at Red Brick University. Short biography for the left-hand sidebar",
@@ -16,12 +16,12 @@
       {
         "network": "Google Scholar",
         "username": "",
-        "url": "https://scholar.google.com/citations?user=PS_CX0AAAAAJ"
+        "url": "https://scholar.google.com/citations?user=im1lBhQAAAAJ&hl=en&oi=ao"
       },
       {
         "network": "ORCID",
         "username": "",
-        "url": "https://orcid.org/yourorcidurl"
+        "url": "https://orcid.org/0000-0002-2547-9535"
       },
       {
         "network": "GitHub",
