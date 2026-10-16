@@ -6,5 +6,6 @@ permalink: /publication/2026-01-01-efficient-emotion-aware-iconic-gesture-predic
 date: 2026-01-01
 venue: "2026 7th International Conference in Electronic Engineering & Information Technology (EEITE)"
 paperurl: "https://doi.org/10.1109/EEITE69609.2026.11679713"
+excerpt: "We introduce a lightweight transformer that generates semantically meaningful co-speech gestures by predicting their placement and intensity using only text and emotion, eliminating the need for audio input during inference. Our model outperforms GPT-4o on the BEAT2 dataset while remaining computationally efficient, offering a promising solution for real-time gesture generation in embodied agents."
 citation: "Edwin C. Montiel-Vazquez, Christian Arzate Cruz, Stefanos Gkikas, Thomas Kassiotis, Giorgos Giannakakis, Randy Gomez. (2026). \"Efficient Emotion-Aware Iconic Gesture Prediction for Robot Co-Speech.\" 2026 7th International Conference in Electronic Engineering & Information Technology (EEITE), pp. 1-5."
 ---
