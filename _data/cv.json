@@ -25,37 +25,37 @@
       },
       {
         "network": "GitHub",
-        "username": "academicpages",
-        "url": "https://github.com/academicpages"
+        "username": "Dregdael",
+        "url": "https://github.com/Dregdael"
       }
     ]
   },
   "work": [],
   "education": [
     {
-      "institution": "GitHub University",
-      "area": "Ph.D in Version Control Theory",
+      "institution": "Tecnológico de Monterrey",
+      "area": "Ph.D in Computer Science",
       "studyType": "",
       "startDate": "",
-      "endDate": "2018",
+      "endDate": "2026",
       "gpa": null,
       "courses": []
     },
     {
-      "institution": "GitHub University",
-      "area": "M.S. in Jekyll",
+      "institution": "Tecnológico de Monterrey",
+      "area": "M.S. in Computer Science",
       "studyType": "",
       "startDate": "",
-      "endDate": "2014",
+      "endDate": "2022",
       "gpa": null,
       "courses": []
     },
     {
-      "institution": "GitHub University",
-      "area": "B.S. in GitHub",
+      "institution": "Tecnológico de Monterrey",
+      "area": "B.S. in Robotics and Digital Systems Engineering",
       "studyType": "",
       "startDate": "",
-      "endDate": "2012",
+      "endDate": "2015",
       "gpa": null,
       "courses": []
     }

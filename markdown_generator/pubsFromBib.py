@@ -1,160 +1,283 @@
-#!/usr/bin/env python
-# coding: utf-8
+#!/usr/bin/env python3
+"""Generate AcademicPages publication Markdown files from one or more BibTeX files."""
 
-# # Publications markdown generator for academicpages
-# 
-# Takes a set of bibtex of publications and converts them for use with [academicpages.github.io](academicpages.github.io). This is an interactive Jupyter notebook ([see more info here](http://jupyter-notebook-beginner-guide.readthedocs.io/en/latest/what_is_jupyter.html)). 
-# 
-# The core python code is also in `pubsFromBibs.py`. 
-# Run either from the `markdown_generator` folder after replacing updating the publist dictionary with:
-# * bib file names
-# * specific venue keys based on your bib file preferences
-# * any specific pre-text for specific files
-# * Collection Name (future feature)
-# 
-# TODO: Make this work with other databases of citations, 
-# TODO: Merge this with the existing TSV parsing solution
-
-
-from pybtex.database.input import bibtex
-import pybtex.database.input.bibtex 
-from time import strptime
-import string
+import argparse
 import html
+import json
 import os
 import re
+import sys
+from datetime import date
+import unicodedata
 
-#todo: incorporate different collection types rather than a catch all publications, requires other changes to template
-publist = {
-    "proceeding": {
-        "file" : "proceedings.bib",
-        "venuekey": "booktitle",
-        "venue-pretext": "In the proceedings of ",
-        "collection" : {"name":"publications",
-                        "permalink":"/publication/"}
-        
-    },
-    "journal":{
-        "file": "pubs.bib",
-        "venuekey" : "journal",
-        "venue-pretext" : "",
-        "collection" : {"name":"publications",
-                        "permalink":"/publication/"}
-    } 
-}
+try:
+    from pybtex.database.input import bibtex
+    from pybtex.exceptions import PybtexError
+    from pybtex.richtext import Text
+except ImportError:
+    bibtex = None
 
-html_escape_table = {
-    "&": "&amp;",
-    '"': "&quot;",
-    "'": "&apos;"
+    class PybtexError(Exception):
+        pass
+
+
+def plain_text(value):
+    """Render BibTeX's LaTeX markup as HTML for publication pages."""
+    return html.unescape(Text.from_latex(str(value)).render_as("html"))
+
+
+def slugify(title):
+    title = unicodedata.normalize("NFKD", title)
+    slug = title.encode("ascii", "ignore").decode("ascii").lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", slug).strip("-")
+    return slug or "publication"
+
+
+def publication_date(fields, entry_key):
+    year = fields.get("year", "").strip()
+    if not re.fullmatch(r"\d{4}", year):
+        raise ValueError(f"entry {entry_key!r} needs a four-digit year")
+
+    month_value = fields.get("month", "1").strip().strip("{}")
+    month_names = {
+        name: month
+        for month, names in enumerate(
+            (
+                ("jan", "january"), ("feb", "february"), ("mar", "march"),
+                ("apr", "april"), ("may",), ("jun", "june"),
+                ("jul", "july"), ("aug", "august"), ("sep", "september"),
+                ("oct", "october"), ("nov", "november"), ("dec", "december"),
+            ),
+            start=1,
+        )
+        for name in names
     }
-
-def html_escape(text):
-    """Produce entities within text."""
-    return "".join(html_escape_table.get(c,c) for c in text)
-
-
-for pubsource in publist:
-    parser = bibtex.Parser()
-    bibdata = parser.parse_file(publist[pubsource]["file"])
-
-    #loop through the individual references in a given bibtex file
-    for bib_id in bibdata.entries:
-        #reset default date
-        pub_year = "1900"
-        pub_month = "01"
-        pub_day = "01"
-        
-        b = bibdata.entries[bib_id].fields
-        
+    if month_value.lower() in month_names:
+        month = month_names[month_value.lower()]
+    else:
         try:
-            pub_year = f'{b["year"]}'
+            month = int(month_value)
+        except ValueError as error:
+            raise ValueError(
+                f"entry {entry_key!r} has an invalid month: {month_value!r}"
+            ) from error
 
-            #todo: this hack for month and day needs some cleanup
-            if "month" in b.keys(): 
-                if(len(b["month"])<3):
-                    pub_month = "0"+b["month"]
-                    pub_month = pub_month[-2:]
-                elif(b["month"] not in range(12)):
-                    tmnth = strptime(b["month"][:3],'%b').tm_mon   
-                    pub_month = "{:02d}".format(tmnth) 
-                else:
-                    pub_month = str(b["month"])
-            if "day" in b.keys(): 
-                pub_day = str(b["day"])
+    day_value = fields.get("day", "1").strip().strip("{}")
+    try:
+        day = int(day_value)
+        return date(int(year), month, day).isoformat()
+    except ValueError as error:
+        raise ValueError(
+            f"entry {entry_key!r} has an invalid publication date"
+        ) from error
 
-                
-            pub_date = pub_year+"-"+pub_month+"-"+pub_day
-            
-            #strip out {} as needed (some bibtex entries that maintain formatting)
-            clean_title = b["title"].replace("{", "").replace("}","").replace("\\","").replace(" ","-")    
 
-            url_slug = re.sub("\\[.*\\]|[^a-zA-Z0-9_-]", "", clean_title)
-            url_slug = url_slug.replace("--","-")
+def authors_for(entry):
+    authors = entry.persons.get("author", [])
+    rendered_authors = []
+    for person in authors:
+        first_names = person.first_names + person.middle_names
+        last_names = person.prelast_names + person.last_names
+        name = " ".join(first_names + last_names)
+        if person.lineage_names:
+            name += ", " + " ".join(person.lineage_names)
+        rendered_authors.append(plain_text(name))
+    return ", ".join(rendered_authors)
 
-            md_filename = (str(pub_date) + "-" + url_slug + ".md").replace("--","-")
-            html_filename = (str(pub_date) + "-" + url_slug).replace("--","-")
 
-            #Build Citation from text
-            citation = ""
+def category_for(entry_type):
+    if entry_type.lower() == "book":
+        return "books"
+    if entry_type.lower() in {"inproceedings", "conference", "proceedings"}:
+        return "conferences"
+    return "manuscripts"
 
-            #citation authors - todo - add highlighting for primary author?
-            for author in bibdata.entries[bib_id].persons["author"]:
-                citation = citation+" "+author.first_names[0]+" "+author.last_names[0]+", "
 
-            #citation title
-            citation = citation + "\"" + html_escape(b["title"].replace("{", "").replace("}","").replace("\\","")) + ".\""
+def publication_markdown(entry, entry_key):
+    fields = entry.fields
+    title = plain_text(fields.get("title", "")).strip()
+    if not title:
+        raise ValueError(f"entry {entry_key!r} has no title")
 
-            #add venue logic depending on citation type
-            venue = publist[pubsource]["venue-pretext"]+b[publist[pubsource]["venuekey"]].replace("{", "").replace("}","").replace("\\","")
+    pub_date = publication_date(fields, entry_key)
+    venue = plain_text(
+        fields.get("journal")
+        or fields.get("booktitle")
+        or fields.get("publisher")
+        or fields.get("institution")
+        or fields.get("howpublished")
+        or ""
+    ).strip()
+    if not venue:
+        raise ValueError(f"entry {entry_key!r} needs a journal, booktitle, or publisher")
+    excerpt = plain_text(fields.get("abstract") or fields.get("note") or "").strip()
+    paper_url = fields.get("url", "").strip()
+    if not paper_url and fields.get("doi"):
+        paper_url = "https://doi.org/" + fields["doi"].strip()
 
-            citation = citation + " " + html_escape(venue)
-            citation = citation + ", " + pub_year + "."
+    citation_parts = []
+    authors = authors_for(entry)
+    if authors:
+        citation_parts.append(authors + ".")
+    citation_parts.extend((f"({pub_date[:4]}).", f'"{title}."'))
+    if venue:
+        venue_details = venue
+        volume = fields.get("volume", "").strip()
+        number = fields.get("number", "").strip()
+        pages = fields.get("pages", "").strip()
+        if volume:
+            venue_details += f", {volume}"
+            if number:
+                venue_details += f"({number})"
+        if pages:
+            venue_details += f", pp. {pages}"
+        citation_parts.append(venue_details + ".")
+    citation = " ".join(citation_parts)
 
-            
-            ## YAML variables
-            md = "---\ntitle: \""   + html_escape(b["title"].replace("{", "").replace("}","").replace("\\","")) + '"\n'
-            
-            md += """collection: """ +  publist[pubsource]["collection"]["name"]
+    basename = f"{pub_date}-{slugify(title)}"
+    metadata = [
+        "---",
+        f"title: {json.dumps(title, ensure_ascii=False)}",
+        "collection: publications",
+        f"category: {category_for(entry.type)}",
+        f"permalink: /publication/{basename}",
+    ]
+    if excerpt:
+        metadata.append(f"excerpt: {json.dumps(excerpt, ensure_ascii=False)}")
+    metadata.extend(
+        (
+            f"date: {pub_date}",
+            f"venue: {json.dumps(venue, ensure_ascii=False)}",
+        )
+    )
+    if paper_url:
+        metadata.append(f"paperurl: {json.dumps(paper_url, ensure_ascii=False)}")
+    metadata.extend(
+        (
+            f"citation: {json.dumps(citation, ensure_ascii=False)}",
+            "---",
+        )
+    )
 
-            md += """\npermalink: """ + publist[pubsource]["collection"]["permalink"]  + html_filename
-            
-            note = False
-            if "note" in b.keys():
-                if len(str(b["note"])) > 5:
-                    md += "\nexcerpt: '" + html_escape(b["note"]) + "'"
-                    note = True
+    body = []
+    if paper_url:
+        body.append(f"[Download paper here]({paper_url})")
+    if excerpt:
+        body.append(excerpt)
+    body.append(f"Recommended citation: {citation}")
+    return basename + ".md", "\n".join(metadata) + "\n\n" + "\n\n".join(body) + "\n"
 
-            md += "\ndate: " + str(pub_date) 
 
-            md += "\nvenue: '" + html_escape(venue) + "'"
-            
-            url = False
-            if "url" in b.keys():
-                if len(str(b["url"])) > 5:
-                    md += "\npaperurl: '" + b["url"] + "'"
-                    url = True
+def input_files(paths):
+    if paths:
+        return paths
 
-            md += "\ncitation: '" + html_escape(citation) + "'"
+    print("Enter BibTeX file paths one at a time. Press Enter on a blank line when done.")
+    paths = []
+    while True:
+        try:
+            path = input("BibTeX file: ").strip()
+        except EOFError:
+            break
+        if not path:
+            break
+        paths.append(path)
+    return paths
 
-            md += "\n---"
 
-            
-            ## Markdown description for individual page
-            if note:
-                md += "\n" + html_escape(b["note"]) + "\n"
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description="Generate AcademicPages publication pages from multiple BibTeX files."
+    )
+    parser.add_argument(
+        "bib_files",
+        nargs="*",
+        help="BibTeX input files (omit to enter paths interactively)",
+    )
+    parser.add_argument(
+        "--output-dir",
+        help="directory for generated Markdown (default: repository _publications)",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="replace publication pages that already exist",
+    )
+    args = parser.parse_args(argv)
 
-            if url:
-                md += "\n[Access paper here](" + b["url"] + "){:target=\"_blank\"}\n" 
-            else:
-                md += "\nUse [Google Scholar](https://scholar.google.com/scholar?q="+html.escape(clean_title.replace("-","+"))+"){:target=\"_blank\"} for full citation"
+    files = input_files(args.bib_files)
+    if not files:
+        parser.error("provide at least one BibTeX file")
+    if bibtex is None:
+        print(
+            "Missing dependency: install it with "
+            "`python3 -m pip install -r markdown_generator/requirements.txt`.",
+            file=sys.stderr,
+        )
+        return 1
 
-            md_filename = os.path.basename(md_filename)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = args.output_dir or os.path.join(script_dir, "..", "_publications")
+    seen_keys = set()
+    seen_files = set()
+    created = skipped = errors = 0
 
-            with open("../_publications/" + md_filename, 'w', encoding="utf-8") as f:
-                f.write(md)
-            print(f'SUCCESSFULLY PARSED {bib_id}: \"', b["title"][:60],"..."*(len(b['title'])>60),"\"")
-        # field may not exist for a reference
-        except KeyError as e:
-            print(f'WARNING Missing Expected Field {e} from entry {bib_id}: \"', b["title"][:30],"..."*(len(b['title'])>30),"\"")
+    for path in files:
+        try:
+            bibdata = bibtex.Parser().parse_file(path)
+        except (OSError, PybtexError) as error:
+            print(f"ERROR: could not read {path}: {error}", file=sys.stderr)
+            errors += 1
             continue
+
+        for key, entry in bibdata.entries.items():
+            if key in seen_keys:
+                print(f"Skipping duplicate BibTeX entry {key!r} from {path}")
+                skipped += 1
+                continue
+            seen_keys.add(key)
+
+            try:
+                filename, content = publication_markdown(entry, key)
+            except ValueError as error:
+                print(f"ERROR: {path}: {error}", file=sys.stderr)
+                errors += 1
+                continue
+
+            if filename in seen_files:
+                print(
+                    f"ERROR: multiple entries produce {filename}; "
+                    f"skipping entry {key!r}",
+                    file=sys.stderr,
+                )
+                errors += 1
+                continue
+            seen_files.add(filename)
+
+            output_path = os.path.join(output_dir, filename)
+            if os.path.exists(output_path) and not args.overwrite:
+                print(
+                    f"Skipping existing file {output_path} "
+                    "(pass --overwrite to replace it)"
+                )
+                skipped += 1
+                continue
+
+            try:
+                os.makedirs(output_dir, exist_ok=True)
+                with open(output_path, "w", encoding="utf-8") as output:
+                    output.write(content)
+            except OSError as error:
+                print(f"ERROR: could not write {output_path}: {error}", file=sys.stderr)
+                errors += 1
+                continue
+
+            print(f"Created: {output_path}")
+            created += 1
+
+    print(f"Done: {created} created, {skipped} skipped, {errors} error(s).")
+    return 1 if errors else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
