@@ -8,5 +8,3 @@ venue: "IEEE Access"
 paperurl: 'https://dregdael.github.io/files/montiel2026behavioral.pdf'
 citation: "Edwin C Montiel-V<span class=\"bibtex-protected\">á</span>zquez, Christian Arzate Cruz, Ruishuang Liu, Harriet Milligan, Jorge Adolfo Ram<span class=\"bibtex-protected\">í</span>rez Uresti, Randy Gomez. (2026). \"Behavioral Empathy Classification in Dyadic Interactions Using Multimodal Cues.\" IEEE Access."
 ---
-
-Recommended citation: Edwin C Montiel-V<span class="bibtex-protected">á</span>zquez, Christian Arzate Cruz, Ruishuang Liu, Harriet Milligan, Jorge Adolfo Ram<span class="bibtex-protected">í</span>rez Uresti, Randy Gomez. (2026). "Behavioral Empathy Classification in Dyadic Interactions Using Multimodal Cues." IEEE Access.

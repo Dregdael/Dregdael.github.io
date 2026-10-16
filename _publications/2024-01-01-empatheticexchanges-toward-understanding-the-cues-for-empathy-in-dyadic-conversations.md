@@ -9,4 +9,3 @@ paperurl: 'https://dregdael.github.io/files/montiel2024empatheticexchanges.pdf'
 citation: "Edwin C Montiel-V<span class=\"bibtex-protected\">á</span>zquez, Christian Arzate Cruz, Jorge Adolfo Ram<span class=\"bibtex-protected\">í</span>rez Uresti, Randy Gomez. (2024). \"Empatheticexchanges: Toward understanding the cues for empathy in dyadic conversations.\" IEEE Access, 12, pp. 195097--195110."
 ---
 
-Recommended citation: Edwin C Montiel-V<span class="bibtex-protected">á</span>zquez, Christian Arzate Cruz, Jorge Adolfo Ram<span class="bibtex-protected">í</span>rez Uresti, Randy Gomez. (2024). "Empatheticexchanges: Toward understanding the cues for empathy in dyadic conversations." IEEE Access, 12, pp. 195097--195110.
